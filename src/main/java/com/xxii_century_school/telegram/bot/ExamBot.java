@@ -1,21 +1,15 @@
 package com.xxii_century_school.telegram.bot;
 
 import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.generics.LongPollingBot;
 
-public class ExamBot extends TelegramLongPollingBot {
+public interface ExamBot extends LongPollingBot {
     @Override
-    public void onUpdateReceived(Update update) {
-
-    }
+    void onUpdateReceived(Update update);
 
     @Override
-    public String getBotUsername() {
-        return null;
-    }
+    String getBotUsername();
 
     @Override
-    public String getBotToken() {
-        return null;
-    }
+    String getBotToken();
 }
