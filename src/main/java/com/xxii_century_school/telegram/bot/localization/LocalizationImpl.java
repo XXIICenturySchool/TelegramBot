@@ -29,12 +29,14 @@ public class LocalizationImpl implements Localization {
     }
 
     Cache<String, Localizer> cache = CacheBuilder.newBuilder()
-            .expireAfterWrite(10, TimeUnit.MINUTES)
+            .expireAfterAccess(10, TimeUnit.MINUTES)
+            .expireAfterWrite(15, TimeUnit.MINUTES)
             .build(new CacheLoader<String, Localizer>() {
                 @Override
                 public Localizer load(String key) throws Exception {
                     return new Localizer(key);
                 }
             });
+
 
 }
