@@ -19,7 +19,9 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @Log
@@ -27,7 +29,6 @@ public class ExamInteractionUtil {
 
     @Autowired
     UserManager userManager;
-    Map<Integer, Set<String>> usersAnswers = new HashMap<>();
 
     @Autowired
     Localization localization;
@@ -38,17 +39,18 @@ public class ExamInteractionUtil {
         if (currentQuestion == null) {
             sendExamEndedMessage(message, bot);
             sendExamResultsToServer(message.getFrom(), userManager.getAnswerResults(message.getFrom()));
+            userManager.endCurrentExam(message.getFrom());
             return;
         }
         SendMessage sendMessage = new SendMessage()
                 .setChatId(message.getChatId())
                 .setText(currentQuestion.getQuestion());
         Message questionMessage = bot.callApiMethod(sendMessage);
-        if (currentQuestion.getUrl() != null) {
+        if (currentQuestion.getPictureUrl() != null) {
             SendPhoto sendPhoto = new SendPhoto()
                     .setReplyToMessageId(questionMessage.getMessageId())
                     .setChatId(message.getChatId())
-                    .setNewPhoto("", new URL(currentQuestion.getUrl()).openStream());
+                    .setNewPhoto("image", new URL(currentQuestion.getPictureUrl()).openStream());
             bot.sendPhoto(sendPhoto);
         }
         sendAnswersMessage(message, bot, currentQuestion, questionMessage);
@@ -78,43 +80,80 @@ public class ExamInteractionUtil {
         if (messageToReply != null) {
             sendMessage.setReplyToMessageId(messageToReply.getMessageId());
         }
-        Set<String> currentAnswers = getCurrentAnswers(message.getFrom());
+        ReplyKeyboard replyKeyboard = getReplyKeyboard(message, currentQuestion);
+        sendMessage.setReplyMarkup(replyKeyboard);
+        bot.callApiMethod(sendMessage);
+    }
+
+    public ReplyKeyboard getReplyKeyboard(Message message, Question currentQuestion) {
+        if (currentQuestion.getOptions() == null) {
+            return defaultReplyMarkup(message.getFrom());
+        }
+        Set<String> currentAnswers = userManager.getCurrentAnswers(message.getFrom());
         ArrayList<KeyboardRow> keyboard = new ArrayList<>();
         for (int i = 0; i < currentQuestion.getOptions().size(); i++) {
             KeyboardRow keyboardButtons = new KeyboardRow();
-            String text = "" + i;
+            String text = currentQuestion.getOptions().get(i);
             if (!currentAnswers.contains(text)) {
                 keyboardButtons.add(new KeyboardButton(text));
                 keyboard.add(keyboardButtons);
             }
         }
-        ReplyKeyboard replyKeyboard = new ReplyKeyboardMarkup().setKeyboard(keyboard);
-        bot.callApiMethod(sendMessage);
+        keyboard.add(endExamKeyboardRow());
+        return new ReplyKeyboardMarkup().setKeyboard(keyboard).setOneTimeKeyboard(true);
     }
 
     public boolean checkAnswer(String answer, Question question) {
         return question.getAnswer().contains(answer);
     }
 
-    public Set<String> getCurrentAnswers(User user) {
-        Set<String> answers = usersAnswers.get(user.getId());
-        if (answers == null) {
-            answers = new HashSet<>();
-            usersAnswers.put(user.getId(), answers);
-        }
-        return answers;
-    }
-
     public void sendQuestionNumber(Message message, ExamBot bot) throws TelegramApiException {
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(message.getChatId())
-                .setReplyToMessageId(message.getMessageId())
-                .setParseMode("Markdown")
-                .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("questionStart") + 1);
-        bot.callApiMethod(sendMessage);
+        if (userManager.isInExam(message.getFrom())) {
+            int currentQuestionId = userManager.getCurrentQuestionId(message.getFrom()) + 1;
+            int totalQuestions = userManager.getCurrentExam(message.getFrom()).getTasks().size();
+            if (currentQuestionId <= totalQuestions) {
+                SendMessage sendMessage = new SendMessage()
+                        .setChatId(message.getChatId())
+                        .setReplyToMessageId(message.getMessageId())
+                        .setParseMode("Markdown")
+                        .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("questionStart") +
+                                currentQuestionId + " / " +
+                                totalQuestions);
+                bot.callApiMethod(sendMessage);
+            }
+        }
     }
 
     public boolean endedAnswers(User user) {
-        return getCurrentAnswers(user).size() == userManager.getCurrentQuestion(user).getAnswer().size();
+        if (userManager.getCurrentAnswers(user) == null) {
+            return true;
+        }
+        if (userManager.getCurrentQuestion(user) == null) {
+            return true;
+        }
+        return userManager.getCurrentAnswers(user).size() >= userManager.getCurrentQuestion(user).getAnswer().size();
+    }
+
+    public ReplyKeyboardMarkup defaultReplyMarkup(User user) {
+        ArrayList<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow keyboardButtons;
+        if (userManager.isInExam(user)) {
+            keyboard.add(endExamKeyboardRow());
+        } else {
+            keyboard = new ArrayList<>();
+            keyboardButtons = new KeyboardRow();
+            keyboardButtons.add(new KeyboardButton("/start"));
+            keyboard.add(keyboardButtons);
+            keyboardButtons = new KeyboardRow();
+            keyboardButtons.add(new KeyboardButton("/teacher"));
+            keyboard.add(keyboardButtons);
+        }
+        return new ReplyKeyboardMarkup().setKeyboard(keyboard).setOneTimeKeyboard(true);
+    }
+
+    private KeyboardRow endExamKeyboardRow() {
+        KeyboardRow keyboardButtons = new KeyboardRow();
+        keyboardButtons.add(new KeyboardButton("/endExam"));
+        return keyboardButtons;
     }
 }

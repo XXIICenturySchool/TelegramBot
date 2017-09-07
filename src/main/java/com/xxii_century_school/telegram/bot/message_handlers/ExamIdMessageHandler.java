@@ -9,6 +9,7 @@ import com.xxii_century_school.telegram.bot.localization.Localization;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
+import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 
@@ -27,8 +28,9 @@ public class ExamIdMessageHandler implements MessageHandler {
         if (message.hasText()) {
             try {
                 int number = Integer.parseInt(message.getText());
-                if (!userManager.isInExam(message.getFrom())) {
-                    startNewExam(message, number, bot);
+                User user = message.getFrom();
+                if (!userManager.isInExam(user) && userManager.hasTeacher(user)) {
+                    startNewExam(message, number, userManager.getTeacherId(user), bot);
                     return true;
                 }
             } catch (NumberFormatException e) {
@@ -38,11 +40,12 @@ public class ExamIdMessageHandler implements MessageHandler {
         return false;
     }
 
-    private void startNewExam(Message message, int examId, ExamBot bot) {
+    private void startNewExam(Message message, int examId, int teacherId, ExamBot bot) {
         ConcurrentQueue.get(getClass().getName() + ".queue", 32).async(() -> {
             try {
-                String locale = message.getFrom().getLanguageCode();
-                SendMessage sendMessage = new SendMessage()
+                User user = message.getFrom();
+                String locale = user.getLanguageCode();
+                SendMessage sendMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(user))
                         .setChatId(message.getChatId())
                         .setReplyToMessageId(message.getMessageId())
                         .setParseMode("Markdown")
@@ -52,8 +55,8 @@ public class ExamIdMessageHandler implements MessageHandler {
                 } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
-                if (!userManager.startExam(message.getFrom(), examId)) {
-                    sendMessage = new SendMessage()
+                if (!userManager.startExam(user, examId)) {
+                    sendMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(user))
                             .setChatId(message.getChatId())
                             .setReplyToMessageId(message.getMessageId())
                             .setParseMode("Markdown")
@@ -64,7 +67,7 @@ public class ExamIdMessageHandler implements MessageHandler {
                         e.printStackTrace();
                     }
                 } else {
-                    sendMessage = new SendMessage()
+                    sendMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(user))
                             .setChatId(message.getChatId())
                             .setReplyToMessageId(message.getMessageId())
                             .setParseMode("Markdown")

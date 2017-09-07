@@ -22,7 +22,11 @@ public class LocalizationImpl implements Localization {
     @Override
     public Localizer get(String locale) {
         try {
-            Localizer localizer = cache.get(locale, () -> new Localizer(locale));
+            if (locale == null) {
+                locale = "en-US";
+            }
+            String finalLocale = locale;
+            Localizer localizer = cache.get(locale, () -> new Localizer(finalLocale));
             return localizer;
         } catch (ExecutionException e) {
             e.printStackTrace();

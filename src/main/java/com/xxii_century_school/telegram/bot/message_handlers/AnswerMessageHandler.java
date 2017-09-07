@@ -6,14 +6,15 @@ import com.xxii_century_school.telegram.bot.exam_handler.ExamInteractionUtil;
 import com.xxii_century_school.telegram.bot.exam_handler.UserManager;
 import com.xxii_century_school.telegram.bot.localization.Localization;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.util.Set;
 
+@Service
 public class AnswerMessageHandler implements MessageHandler {
 
     @Autowired
@@ -27,31 +28,35 @@ public class AnswerMessageHandler implements MessageHandler {
 
     @Override
     public boolean handleMessage(Message message, ExamBot bot) {
-        User from = message.getFrom();
-        if (userManager.isInExam(from) && message.hasText()) {
+        User user = message.getFrom();
+        if (userManager.isInExam(user) && message.hasText()) {
             String text = message.getText();
-            Set<String> currentAnswers = examInteractionUtil.getCurrentAnswers(from);
             try {
-                if (examInteractionUtil.checkAnswer(text, userManager.getCurrentQuestion(from))) {
-                    currentAnswers.add(text);
+                if (examInteractionUtil.checkAnswer(text, userManager.getCurrentQuestion(user))) {
+                    userManager.addCurrendtAnswer(user, text);
                     SendMessage sendMessage = new SendMessage()
                             .setChatId(message.getChatId())
                             .setReplyToMessageId(message.getMessageId())
-                            .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("youAreCorrect"));
+                            .setReplyMarkup(examInteractionUtil.getReplyKeyboard(message, userManager.getCurrentQuestion(user)))
+                            .setText(localization.get(user.getLanguageCode()).getMessage("youAreCorrect"));
                     bot.callApiMethod(sendMessage);
-
+                    userManager.addCurrendtAnswer(user, text);
                 } else {
-                    SendMessage sendMessage = new SendMessage()
+                    SendMessage sendMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(user))
                             .setChatId(message.getChatId())
                             .setReplyToMessageId(message.getMessageId())
-                            .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("youAreIncorrect"));
+                            .setText(localization.get(user.getLanguageCode()).getMessage("youAreIncorrect"));
                     bot.callApiMethod(sendMessage);
-                    userManager.nextQuestion(message.getFrom(), false);
-                }
-                if (examInteractionUtil.endedAnswers(message.getFrom())) {
-                    userManager.nextQuestion(message.getFrom(), true);
+                    userManager.nextQuestion(user, false);
+                    examInteractionUtil.sendQuestionNumber(message, bot);
                     examInteractionUtil.sendCurrentQuestion(message, bot);
                 }
+                if (examInteractionUtil.endedAnswers(user)) {
+                    userManager.nextQuestion(user, true);
+                    examInteractionUtil.sendQuestionNumber(message, bot);
+                    examInteractionUtil.sendCurrentQuestion(message, bot);
+                }
+                return true;
             } catch (TelegramApiException | IOException e) {
                 bot.sendError(message);
                 e.printStackTrace();

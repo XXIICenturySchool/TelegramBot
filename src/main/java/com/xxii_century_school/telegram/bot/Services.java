@@ -7,24 +7,29 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
+import static java.lang.Math.abs;
+
 public enum Services {
     DISCOVERY("discovery"),
     MAPLOGIN("maplogin"),
     MAP("maplogin"),
     LOGIN("maplogin"),
     MATH("mathservice"),
-    TELEGRAM("telegram");
+    TELEGRAM("telegram"),
+    AMERICAN_QUESTIONS("americanQuestions"),
+    GEOMETRY("geometry"),
+    GATE("gate");
 
     public final String id;
 
     Services(String id) {
         this.id = id;
     }
-    
+
     private static final Random random = new Random(new Date().getTime());
 
     private static ServiceInstance pickRandomInstanceFromList(List<ServiceInstance> instances) {
-        return instances.get(random.nextInt() % instances.size());
+        return instances.get(abs(random.nextInt(instances.size())) % instances.size());
     }
 
     public ServiceInstance pickRandomInstance(DiscoveryClient discoveryClient) {

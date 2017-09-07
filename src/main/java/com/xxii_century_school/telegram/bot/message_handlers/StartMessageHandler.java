@@ -2,6 +2,7 @@ package com.xxii_century_school.telegram.bot.message_handlers;
 
 import com.xxii_century_school.telegram.bot.ExamBot;
 import com.xxii_century_school.telegram.bot.MessageHandler;
+import com.xxii_century_school.telegram.bot.exam_handler.ExamInteractionUtil;
 import com.xxii_century_school.telegram.bot.localization.Localization;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,9 @@ public class StartMessageHandler implements MessageHandler {
     @Setter
     Localization locale;
 
+    @Autowired
+    ExamInteractionUtil examInteractionUtil;
+
 
     @Override
     public boolean handleMessage(Message message, ExamBot bot) {
@@ -23,8 +27,8 @@ public class StartMessageHandler implements MessageHandler {
                 String localeCode = message.getFrom().getLanguageCode();
                 String text = locale.get(localeCode).getMessage("welcomeMessage") +
                         "\n\n" +
-                        locale.get(localeCode).getMessage("askForExamKey");
-                SendMessage newMessage = new SendMessage() // Create a SendMessage object with mandatory fields
+                        locale.get(localeCode).getMessage("askForTeacherId");
+                SendMessage newMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(message.getFrom())) // Create a SendMessage object with mandatory fields
                         .setChatId(message.getChatId())
                         .setParseMode("Markdown")
                         .setText(text)

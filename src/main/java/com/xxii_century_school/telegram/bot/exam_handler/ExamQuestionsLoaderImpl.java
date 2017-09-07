@@ -10,13 +10,11 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-@Service
 @Log
 public class ExamQuestionsLoaderImpl implements ExamQuestionsLoader {
     private Gson gson = new Gson();
@@ -26,9 +24,9 @@ public class ExamQuestionsLoaderImpl implements ExamQuestionsLoader {
 
     @Override
     @SneakyThrows
-    public Exam loadExam(int id) {
-        ServiceInstance serviceInstance = Services.MAPLOGIN.pickRandomInstance(discoveryClient);
-        String loadExamUrl = serviceInstance.getUri().toString() + "/exam/" + id + "/all";
+    public Exam loadExam(int id, int teacherId) {
+        ServiceInstance serviceInstance = Services.GATE.pickRandomInstance(discoveryClient);
+        String loadExamUrl = serviceInstance.getUri().toString() + "/exam/startExam?examId=" + id + "&teacherId=" + teacherId;
         log.info("loading exam from " + loadExamUrl);
         InputStream stream = new URL(loadExamUrl).openStream();
         Exam e = gson.fromJson(IOUtils.toString(stream, Charset.defaultCharset()), Exam.class);

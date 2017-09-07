@@ -4,9 +4,12 @@ import java.util.List;
 
 public class Utils {
     public static String formatAnswerOptions(List<String> answerOptions) {
+        if (answerOptions == null) {
+            return "Send me your answer";
+        }
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < answerOptions.size(); i++) {
-            result.append(i + ". " + answerOptions.get(i));
+            result.append(i + ". " + answerOptions.get(i) + "\n");
         }
         return result.toString().trim();
     }

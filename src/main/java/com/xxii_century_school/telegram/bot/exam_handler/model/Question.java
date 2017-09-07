@@ -13,7 +13,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Question {
     private String question;
-    private String url;
+    private String pictureUrl;
     private List<String> options;
     private List<String> answer;
 
