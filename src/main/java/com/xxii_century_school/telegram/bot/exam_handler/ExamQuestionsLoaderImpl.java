@@ -32,8 +32,7 @@ public class ExamQuestionsLoaderImpl implements ExamQuestionsLoader {
         log.info("loading exam from " + loadExamUrl);
         InputStream stream = new URL(loadExamUrl).openStream();
         Exam e = gson.fromJson(IOUtils.toString(stream, Charset.defaultCharset()), Exam.class);
-        //return restTemplate.getForObject("http://gturnquist-quoters.cfapps.io/api/random", Exam.class);
-        return e;//todo
+        return e;
     }
 
     @Override
