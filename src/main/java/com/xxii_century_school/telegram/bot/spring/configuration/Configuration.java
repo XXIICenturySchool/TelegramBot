@@ -1,10 +1,11 @@
 package com.xxii_century_school.telegram.bot.spring.configuration;
 
+import com.xxii_century_school.telegram.FixedSizePoolQueueManager;
 import com.xxii_century_school.telegram.bot.ExamBot;
 import com.xxii_century_school.telegram.bot.ExamBotImpl;
 import com.xxii_century_school.telegram.bot.MessageHandler;
-import com.xxii_century_school.telegram.bot.localization.Localization;
-import com.xxii_century_school.telegram.bot.localization.LocalizationImpl;
+import com.xxii_century_school.telegram.bot.QueueManager;
+import com.xxii_century_school.telegram.bot.message_handlers.ExamIdMessageHandler;
 import com.xxii_century_school.telegram.bot.message_handlers.StartMessageHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -17,27 +18,37 @@ import java.util.List;
 public class Configuration {
 
     @Bean
-    MessageHandler startMessageHandler() {
+    StartMessageHandler startMessageHandler() {
         return new StartMessageHandler();
     }
 
+    @Bean
+    ExamIdMessageHandler numberMessageHandler() {
+        return new ExamIdMessageHandler();
+    }
+
     @Autowired
-    private MessageHandler startMessageHandler;
+    private StartMessageHandler startMessageHandler;
+
+    @Autowired
+    private ExamIdMessageHandler numberMessageHandler;
 
     @Bean
     public List<MessageHandler> messageHandlers() {
         List<MessageHandler> aList = new ArrayList<>();
         aList.add(startMessageHandler);
+        aList.add(numberMessageHandler);
         return aList;
-    }
-
-    @Bean
-    Localization localization() {
-        return new LocalizationImpl();
     }
 
     @Bean
     ExamBot examBot() {
         return new ExamBotImpl();
+    }
+
+
+    @Bean
+    QueueManager queueManager() {
+        return new FixedSizePoolQueueManager();
     }
 }

@@ -20,23 +20,21 @@ public class StartMessageHandler implements MessageHandler {
     public boolean handleMessage(Message message, ExamBot bot) {
         if (message.hasText()) {
             if (message.getText().equalsIgnoreCase("/start")) {
-                queue.async(() -> {
-                    String localeCode = message.getFrom().getLanguageCode();
-                    String text = locale.get(localeCode).getMessage("welcomeMessage") +
-                            "\n\n" +
-                            locale.get(localeCode).getMessage("askForExamKey");
-                    SendMessage newMessage = new SendMessage() // Create a SendMessage object with mandatory fields
-                            .setChatId(message.getChatId())
-                            .setParseMode("Markdown")
-                            .setText(text)
-                            .setReplyToMessageId(message.getMessageId());
-                    try {
-                        bot.callApiMethod(newMessage);
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                        bot.sendError(message);
-                    }
-                });
+                String localeCode = message.getFrom().getLanguageCode();
+                String text = locale.get(localeCode).getMessage("welcomeMessage") +
+                        "\n\n" +
+                        locale.get(localeCode).getMessage("askForExamKey");
+                SendMessage newMessage = new SendMessage() // Create a SendMessage object with mandatory fields
+                        .setChatId(message.getChatId())
+                        .setParseMode("Markdown")
+                        .setText(text)
+                        .setReplyToMessageId(message.getMessageId());
+                try {
+                    bot.callApiMethod(newMessage);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                    bot.sendError(message);
+                }
                 return true;
             }
         }

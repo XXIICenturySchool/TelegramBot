@@ -6,9 +6,11 @@ import com.google.common.cache.CacheLoader;
 import com.xxii_century_school.telegram.bot.exam_handler.model.Exam;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
+@Service
 public class ExamManagerImpl implements ExamManager {
     @Autowired
     ExamQuestionsLoader loader;

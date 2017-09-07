@@ -5,10 +5,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.RemovalNotification;
 import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+@Service
 @Scope("singleton")
 public class LocalizationImpl implements Localization {
 

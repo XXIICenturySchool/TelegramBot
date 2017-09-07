@@ -4,11 +4,14 @@ import com.xxii_century_school.telegram.bot.exam_handler.model.Exam;
 import com.xxii_century_school.telegram.bot.exam_handler.model.Question;
 import com.xxii_century_school.telegram.bot.exam_handler.model.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.api.objects.User;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+@Service
 public class UserManagerImpl implements UserManager {
 
     Map<Integer, UserInfo> userInfoMap = new HashMap<>();
@@ -38,20 +41,31 @@ public class UserManagerImpl implements UserManager {
     }
 
     @Override
-    public void nextQuestion(User user) {
+    public void nextQuestion(User user, boolean wasCorrect) {
         UserInfo userInfo = getUserInfo(user);
         userInfo.setCurrentQuestionId(userInfo.getCurrentQuestionId() + 1);
         if (userInfo.getCurrentQuestionId() > getCurrentExam(user).getTasks().size()) {
             userInfo.setCurrentQuestionId(null);
             userInfo.setCurrentExamId(null);
         }
+        userInfo.getAnswerResults().add(wasCorrect);
     }
 
     @Override
-    public void startExam(User user, int examId) {
-        getUserInfo(user).setCurrentExamId(examId);
-        getUserInfo(user).setCurrentQuestionId(0);
+    public boolean startExam(User user, int examId) {
         Exam e = examManager.getExam(examId);
+        if (e != null) {
+            getUserInfo(user).setCurrentExamId(examId);
+            getUserInfo(user).setCurrentQuestionId(0);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public List<Boolean> getAnswerResults(User user) {
+        return getUserInfo(user).getAnswerResults();
     }
 
     public UserInfo getUserInfo(User user) {

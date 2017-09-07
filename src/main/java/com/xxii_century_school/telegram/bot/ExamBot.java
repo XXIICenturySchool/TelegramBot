@@ -1,6 +1,7 @@
 package com.xxii_century_school.telegram.bot;
 
 import org.telegram.telegrambots.api.methods.BotApiMethod;
+import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -16,7 +17,9 @@ public interface ExamBot extends LongPollingBot {
     @Override
     String getBotToken();
 
-    void callApiMethod(BotApiMethod method) throws TelegramApiException;
+    Message callApiMethod(BotApiMethod method) throws TelegramApiException;
+
+    Message sendPhoto(SendPhoto sendPhoto) throws TelegramApiException;
 
     void sendError(Message message);
 }

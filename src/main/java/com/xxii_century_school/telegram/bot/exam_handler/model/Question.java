@@ -15,5 +15,10 @@ public class Question {
     private String question;
     private String url;
     private List<String> options;
-    private List<Integer> answer;
+    private List<String> answer;
+
+
+    public boolean isMultiChoise() {
+        return answer.size() > 1;
+    }
 }
