@@ -6,14 +6,11 @@ import com.xxii_century_school.telegram.bot.exam_handler.model.Exam;
 import com.xxii_century_school.telegram.bot.exam_handler.model.Question;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.charset.Charset;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 @Log
 public class ExamQuestionsLoaderImpl implements ExamQuestionsLoader {
@@ -26,10 +23,11 @@ public class ExamQuestionsLoaderImpl implements ExamQuestionsLoader {
     @SneakyThrows
     public Exam loadExam(int id, int teacherId) {
         ServiceInstance serviceInstance = Services.GATE.pickRandomInstance(discoveryClient);
-        String loadExamUrl = serviceInstance.getUri().toString() + "/exam/startExam?examId=" + id + "&teacherId=" + teacherId;
-        log.info("loading exam from " + loadExamUrl);
-        InputStream stream = new URL(loadExamUrl).openStream();
-        Exam e = gson.fromJson(IOUtils.toString(stream, Charset.defaultCharset()), Exam.class);
+        String loadExamURL = serviceInstance.getUri().toString() + "/exam/getExam?examId=" + id + "&teacherId=" + teacherId;
+        RestTemplate restTemplate = new RestTemplate();
+        log.info("loading exam from " + loadExamURL);
+        ResponseEntity<Exam> examResponseEntity = restTemplate.getForEntity(loadExamURL, Exam.class);
+        Exam e = examResponseEntity.getBody();
         return e;
     }
 

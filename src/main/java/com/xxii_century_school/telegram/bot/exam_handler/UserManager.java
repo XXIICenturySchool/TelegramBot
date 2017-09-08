@@ -2,9 +2,10 @@ package com.xxii_century_school.telegram.bot.exam_handler;
 
 import com.xxii_century_school.telegram.bot.exam_handler.model.Exam;
 import com.xxii_century_school.telegram.bot.exam_handler.model.Question;
+import com.xxii_century_school.telegram.bot.exam_handler.model.UserInfo;
 import org.telegram.telegrambots.api.objects.User;
 
-import java.util.List;
+import java.util.Date;
 import java.util.Set;
 
 public interface UserManager {
@@ -22,19 +23,23 @@ public interface UserManager {
 
     Integer getCurrentQuestionId(User user);
 
-    void nextQuestion(User user, boolean wasCorrect);
+    void nextQuestion(User user, boolean wasCorrect, boolean skipped);
 
     boolean startExam(User user, int examId);
 
-    List<Boolean> getAnswerResults(User user);
+    void skipCurrentQuestion(User user);
 
-    void addAnswerResult(User user, boolean result);
+    void failCurrentQuestion(User user);
 
     void endCurrentExam(User user);
 
     Set<String> getCurrentAnswers(User user);
 
-    void addCurrendtAnswer(User user, String currentAnswer);
+    void addCurrentAnswer(User user, String currentAnswer);
 
     void endCurrentQuestion(User user);
+
+    Date getExamStartDate(User user);
+
+    UserInfo getUserInfo(User from);
 }

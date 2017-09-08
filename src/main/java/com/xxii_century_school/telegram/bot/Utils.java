@@ -13,4 +13,11 @@ public class Utils {
         }
         return result.toString().trim();
     }
+
+    public static String preparePictureURL(String pictureUrl) {
+        if (pictureUrl.startsWith("http")) {
+            return pictureUrl;
+        }
+        return "http://" + pictureUrl;
+    }
 }

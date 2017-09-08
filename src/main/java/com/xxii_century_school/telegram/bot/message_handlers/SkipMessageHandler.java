@@ -11,8 +11,10 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import java.io.IOException;
+
 @Service
-public class TeacherIdMessageHandler implements MessageHandler {
+public class SkipMessageHandler implements MessageHandler {
     @Autowired
     private UserManager userManager;
 
@@ -24,19 +26,19 @@ public class TeacherIdMessageHandler implements MessageHandler {
 
     @Override
     public boolean handleMessage(Message message, ExamBot bot) {
-        if (message.hasText() && !userManager.hasTeacher(message.getFrom())) {
+        if (userManager.isInExam(message.getFrom()) && message.hasText() && message.getText().equals("/skip")) {
+            userManager.nextQuestion(message.getFrom(), false, true);
+            SendMessage sendMessage = new SendMessage()
+                    .setReplyMarkup(examInteractionUtil.defaultReplyMarkup(message.getFrom()))
+                    .setChatId(message.getChatId())
+                    .setReplyToMessageId(message.getMessageId())
+                    .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("questionSkipped"));
             try {
-                int teacherId = Integer.parseInt(message.getText());
-                userManager.setTeacherId(message.getFrom(), teacherId);
-                SendMessage sendMessage = new SendMessage()
-                        .setReplyMarkup(examInteractionUtil.defaultReplyMarkup(message.getFrom()))
-                        .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("askForExamKey"))
-                        .setChatId(message.getChatId());
                 bot.callApiMethod(sendMessage);
+                examInteractionUtil.sendQuestionNumber(message, bot);
+                examInteractionUtil.sendCurrentQuestion(message, bot);
                 return true;
-            } catch (NumberFormatException e) {
-                bot.sendError(message);
-            } catch (TelegramApiException e) {
+            } catch (TelegramApiException | IOException e) {
                 bot.sendError(message);
                 e.printStackTrace();
             }

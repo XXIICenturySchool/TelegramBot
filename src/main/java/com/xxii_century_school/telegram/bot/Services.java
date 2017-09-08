@@ -29,6 +29,9 @@ public enum Services {
     private static final Random random = new Random(new Date().getTime());
 
     private static ServiceInstance pickRandomInstanceFromList(List<ServiceInstance> instances) {
+        if (instances.size() == 0) {
+            return null;
+        }
         return instances.get(abs(random.nextInt(instances.size())) % instances.size());
     }
 

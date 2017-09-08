@@ -44,11 +44,15 @@ public class Configuration {
     TeacherIdMessageHandler teacherIdMessageHandler;
     @Autowired
     TeacherMessageHandler teacherMessageHandler;
+    @Autowired
+    SkipMessageHandler skipMessageHandler;
+
 
     @Bean
     public List<MessageHandler> messageHandlers() {
         List<MessageHandler> aList = new ArrayList<>();
         aList.add(endExamMessageHandler);
+        aList.add(skipMessageHandler);
         aList.add(startMessageHandler);
         aList.add(numberMessageHandler);
         aList.add(answerMessageHandler);

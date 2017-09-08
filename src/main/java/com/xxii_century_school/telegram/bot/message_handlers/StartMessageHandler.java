@@ -4,7 +4,6 @@ import com.xxii_century_school.telegram.bot.ExamBot;
 import com.xxii_century_school.telegram.bot.MessageHandler;
 import com.xxii_century_school.telegram.bot.exam_handler.ExamInteractionUtil;
 import com.xxii_century_school.telegram.bot.localization.Localization;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
@@ -13,11 +12,10 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 public class StartMessageHandler implements MessageHandler {
 
     @Autowired
-    @Setter
-    Localization locale;
+    private Localization locale;
 
     @Autowired
-    ExamInteractionUtil examInteractionUtil;
+    private ExamInteractionUtil examInteractionUtil;
 
 
     @Override

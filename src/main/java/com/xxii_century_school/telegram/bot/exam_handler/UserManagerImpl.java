@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.api.objects.User;
 
-import java.util.List;
+import java.util.Date;
 import java.util.Set;
 
 @Service
@@ -72,7 +72,7 @@ public class UserManagerImpl implements UserManager {
     }
 
     @Override
-    public void nextQuestion(User user, boolean wasCorrect) {
+    public void nextQuestion(User user, boolean wasCorrect, boolean skipped) {
         UserInfo userInfo = getUserInfo(user);
         if (userInfo.getCurrentQuestionId() == null) {
             endCurrentExam(user);
@@ -82,8 +82,13 @@ public class UserManagerImpl implements UserManager {
         if (userInfo.getCurrentQuestionId() > getCurrentExam(user).getTasks().size()) {
             endCurrentExam(user);
         }
-        userInfo.getAnswerResults().add(wasCorrect);
         saveUserInfo(userInfo);
+        if (!wasCorrect && !skipped) {
+            failCurrentQuestion(user);
+        }
+        if (skipped) {
+            skipCurrentQuestion(user);
+        }
         endCurrentQuestion(user);
     }
 
@@ -97,11 +102,29 @@ public class UserManagerImpl implements UserManager {
             UserInfo userInfo = getUserInfo(user);
             userInfo.setCurrentExamId(examId);
             userInfo.setCurrentQuestionId(0);
+            userInfo.setWrongAnswers(0);
+            userInfo.setSkippedAnswers(0);
+            userInfo.setExamStart(new Date());
             saveUserInfo(userInfo);
             return true;
         } else {
             return false;
         }
+    }
+
+
+    @Override
+    public void skipCurrentQuestion(User user) {
+        UserInfo userInfo = getUserInfo(user);
+        userInfo.setSkippedAnswers(userInfo.getSkippedAnswers() + 1);
+        saveUserInfo(userInfo);
+    }
+
+    @Override
+    public void failCurrentQuestion(User user) {
+        UserInfo userInfo = getUserInfo(user);
+        userInfo.setWrongAnswers(userInfo.getWrongAnswers() + 1);
+        saveUserInfo(userInfo);
     }
 
     @Transactional
@@ -113,23 +136,13 @@ public class UserManagerImpl implements UserManager {
         return userInfoDao.save(userInfo);
     }
 
-    @Override
-    public List<Boolean> getAnswerResults(User user) {
-        return getUserInfo(user).getAnswerResults();
-    }
-
-    @Override
-    public void addAnswerResult(User user, boolean result) {
-        UserInfo userInfo = getUserInfo(user);
-        userInfo.getAnswerResults().add(result);
-        saveUserInfo(userInfo);
-    }
 
     @Override
     public void endCurrentExam(User user) {
         UserInfo userInfo = getUserInfo(user);
         userInfo.setCurrentExamId(null);
         userInfo.setCurrentQuestionId(null);
+        userInfo.setExamStart(null);
         endCurrentQuestion(user);
         saveUserInfo(userInfo);
     }
@@ -141,6 +154,12 @@ public class UserManagerImpl implements UserManager {
         saveUserInfo(userInfo);
     }
 
+    @Override
+    public Date getExamStartDate(User user) {
+        return null;
+    }
+
+    @Override
     public UserInfo getUserInfo(User user) {
         UserInfo info = userInfoDao.getByUserId(user.getId());
         if (info == null) {
@@ -158,7 +177,7 @@ public class UserManagerImpl implements UserManager {
     }
 
     @Override
-    public void addCurrendtAnswer(User user, String currentAnswer) {
+    public void addCurrentAnswer(User user, String currentAnswer) {
         UserInfo userInfo = getUserInfo(user);
         userInfo.getCurrentAnswers().add(currentAnswer);
         saveUserInfo(userInfo);

@@ -18,13 +18,13 @@ import java.io.IOException;
 public class AnswerMessageHandler implements MessageHandler {
 
     @Autowired
-    ExamInteractionUtil examInteractionUtil;
+    private ExamInteractionUtil examInteractionUtil;
 
     @Autowired
-    UserManager userManager;
+    private UserManager userManager;
 
     @Autowired
-    Localization localization;
+    private Localization localization;
 
     @Override
     public boolean handleMessage(Message message, ExamBot bot) {
@@ -33,29 +33,27 @@ public class AnswerMessageHandler implements MessageHandler {
             String text = message.getText();
             try {
                 if (examInteractionUtil.checkAnswer(text, userManager.getCurrentQuestion(user))) {
-                    userManager.addCurrendtAnswer(user, text);
+                    userManager.addCurrentAnswer(user, text);
                     SendMessage sendMessage = new SendMessage()
                             .setChatId(message.getChatId())
                             .setReplyToMessageId(message.getMessageId())
                             .setReplyMarkup(examInteractionUtil.getReplyKeyboard(message, userManager.getCurrentQuestion(user)))
                             .setText(localization.get(user.getLanguageCode()).getMessage("youAreCorrect"));
                     bot.callApiMethod(sendMessage);
-                    userManager.addCurrendtAnswer(user, text);
+                    userManager.addCurrentAnswer(user, text);
                 } else {
                     SendMessage sendMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(user))
                             .setChatId(message.getChatId())
                             .setReplyToMessageId(message.getMessageId())
                             .setText(localization.get(user.getLanguageCode()).getMessage("youAreIncorrect"));
                     bot.callApiMethod(sendMessage);
-                    userManager.nextQuestion(user, false);
-                    examInteractionUtil.sendQuestionNumber(message, bot);
-                    examInteractionUtil.sendCurrentQuestion(message, bot);
+                    userManager.nextQuestion(user, false, false);
                 }
                 if (examInteractionUtil.endedAnswers(user)) {
-                    userManager.nextQuestion(user, true);
-                    examInteractionUtil.sendQuestionNumber(message, bot);
-                    examInteractionUtil.sendCurrentQuestion(message, bot);
+                    userManager.nextQuestion(user, true, false);
                 }
+                examInteractionUtil.sendQuestionNumber(message, bot);
+                examInteractionUtil.sendCurrentQuestion(message, bot);
                 return true;
             } catch (TelegramApiException | IOException e) {
                 bot.sendError(message);

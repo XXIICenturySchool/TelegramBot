@@ -1,12 +1,20 @@
 package com.xxii_century_school.telegram.bot.exam_handler;
 
 import com.xxii_century_school.telegram.bot.ExamBot;
+import com.xxii_century_school.telegram.bot.Services;
 import com.xxii_century_school.telegram.bot.Utils;
+import com.xxii_century_school.telegram.bot.exam_handler.model.ExamResult;
 import com.xxii_century_school.telegram.bot.exam_handler.model.Question;
+import com.xxii_century_school.telegram.bot.exam_handler.model.UserInfo;
 import com.xxii_century_school.telegram.bot.localization.Localization;
+import com.xxii_century_school.telegram.bot.localization.Localizer;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.Message;
@@ -20,7 +28,6 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @Service
@@ -33,12 +40,17 @@ public class ExamInteractionUtil {
     @Autowired
     Localization localization;
 
+    @Autowired
+    DiscoveryClient discoveryClient;
+
 
     public void sendCurrentQuestion(Message message, ExamBot bot) throws TelegramApiException, IOException {
         Question currentQuestion = userManager.getCurrentQuestion(message.getFrom());
         if (currentQuestion == null) {
-            sendExamEndedMessage(message, bot);
-            sendExamResultsToServer(message.getFrom(), userManager.getAnswerResults(message.getFrom()));
+            if (userManager.isInExam(message.getFrom())) {
+                sendExamEndedMessage(message, bot);
+                sendExamResults(message, bot);
+            }
             userManager.endCurrentExam(message.getFrom());
             return;
         }
@@ -47,17 +59,38 @@ public class ExamInteractionUtil {
                 .setText(currentQuestion.getQuestion());
         Message questionMessage = bot.callApiMethod(sendMessage);
         if (currentQuestion.getPictureUrl() != null) {
+            String pictureURL = Utils.preparePictureURL(currentQuestion.getPictureUrl());
             SendPhoto sendPhoto = new SendPhoto()
                     .setReplyToMessageId(questionMessage.getMessageId())
                     .setChatId(message.getChatId())
-                    .setNewPhoto("image", new URL(currentQuestion.getPictureUrl()).openStream());
+                    .setNewPhoto("image", new URL(pictureURL).openStream());
             bot.sendPhoto(sendPhoto);
         }
         sendAnswersMessage(message, bot, currentQuestion, questionMessage);
     }
 
-    private void sendExamResultsToServer(User from, List<Boolean> answerResults) {
-        log.severe("TODO: implement ExamInteractionUtil.sendExamResultsToServer(User from, List<Boolean> answerResults)");//TODO: implement
+    private void sendExamResults(Message message, ExamBot bot) {
+        UserInfo userInfo = userManager.getUserInfo(message.getFrom());
+        ExamResult examResult = new ExamResult(userInfo);
+        Localizer localizer = localization.get(message.getFrom().getLanguageCode());
+        SendMessage sendMessage = new SendMessage()
+                .setChatId(message.getChatId())
+                .setText(localizer.getMessage("yourResults") + " " +
+                        userInfo.getWrongAnswers() + " " +
+                        localizer.getMessage("wrong") + " " +
+                        userInfo.getSkippedAnswers() + " " +
+                        localizer.getMessage("skipped"));
+        try {
+            bot.callApiMethod(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+        String url = Services.GATE.pickRandomInstance(discoveryClient).getUri() + "/sentResult";
+        log.info("sending results to " + url);
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
+        restTemplate.getMessageConverters().add(new StringHttpMessageConverter());
+        restTemplate.postForObject(url, examResult, Void.class);
     }
 
     private void sendExamEndedMessage(Message message, ExamBot bot) throws TelegramApiException {
@@ -74,9 +107,13 @@ public class ExamInteractionUtil {
 
     public void sendAnswersMessage(Message message, ExamBot bot, Question currentQuestion, Message messageToReply) throws TelegramApiException {
         SendMessage sendMessage;
+        String text = Utils.formatAnswerOptions(currentQuestion.getOptions());
+        if (text == null || text.length() == 0) {
+            return;
+        }
         sendMessage = new SendMessage()
                 .setChatId(message.getChatId())
-                .setText(Utils.formatAnswerOptions(currentQuestion.getOptions()));
+                .setText(text);
         if (messageToReply != null) {
             sendMessage.setReplyToMessageId(messageToReply.getMessageId());
         }
@@ -99,7 +136,7 @@ public class ExamInteractionUtil {
                 keyboard.add(keyboardButtons);
             }
         }
-        keyboard.add(endExamKeyboardRow());
+        keyboard.add(examKeyboardRow());
         return new ReplyKeyboardMarkup().setKeyboard(keyboard).setOneTimeKeyboard(true);
     }
 
@@ -138,7 +175,7 @@ public class ExamInteractionUtil {
         ArrayList<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow keyboardButtons;
         if (userManager.isInExam(user)) {
-            keyboard.add(endExamKeyboardRow());
+            keyboard.add(examKeyboardRow());
         } else {
             keyboard = new ArrayList<>();
             keyboardButtons = new KeyboardRow();
@@ -151,9 +188,10 @@ public class ExamInteractionUtil {
         return new ReplyKeyboardMarkup().setKeyboard(keyboard).setOneTimeKeyboard(true);
     }
 
-    private KeyboardRow endExamKeyboardRow() {
+    private KeyboardRow examKeyboardRow() {
         KeyboardRow keyboardButtons = new KeyboardRow();
-        keyboardButtons.add(new KeyboardButton("/endExam"));
+        //keyboardButtons.add(new KeyboardButton("/endExam"));
+        keyboardButtons.add("/skip");
         return keyboardButtons;
     }
 }

@@ -15,13 +15,13 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class ExamIdMessageHandler implements MessageHandler {
     @Autowired
-    UserManager userManager;
+    private UserManager userManager;
 
     @Autowired
-    ExamInteractionUtil examInteractionUtil;
+    private ExamInteractionUtil examInteractionUtil;
 
     @Autowired
-    Localization localization;
+    private Localization localization;
 
     @Override
     public boolean handleMessage(Message message, ExamBot bot) {
