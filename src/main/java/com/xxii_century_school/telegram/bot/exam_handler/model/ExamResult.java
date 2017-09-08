@@ -13,12 +13,14 @@ public class ExamResult {
     private int numberOfSkipedAnswers;
     private int numberOfWrongAnswers;
     private int seconds;
+    private String name;
 
     public ExamResult(UserInfo userInfo) {
         this(userInfo.getCurrentExamId(),
                 userInfo.getTeacherId(),
                 userInfo.getSkippedAnswers(),
                 userInfo.getWrongAnswers(),
-                (int) ((new Date().getTime() - userInfo.getExamStart().getTime()) / 1000L));
+                (int) ((new Date().getTime() - userInfo.getExamStart().getTime()) / 1000L),
+                userInfo.getFirstName() + " " + userInfo.getLastName());
     }
 }

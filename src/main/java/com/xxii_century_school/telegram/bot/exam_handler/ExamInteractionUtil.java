@@ -3,6 +3,7 @@ package com.xxii_century_school.telegram.bot.exam_handler;
 import com.xxii_century_school.telegram.bot.ExamBot;
 import com.xxii_century_school.telegram.bot.Services;
 import com.xxii_century_school.telegram.bot.Utils;
+import com.xxii_century_school.telegram.bot.exam_handler.model.Exam;
 import com.xxii_century_school.telegram.bot.exam_handler.model.ExamResult;
 import com.xxii_century_school.telegram.bot.exam_handler.model.Question;
 import com.xxii_century_school.telegram.bot.exam_handler.model.UserInfo;
@@ -71,15 +72,20 @@ public class ExamInteractionUtil {
 
     private void sendExamResults(Message message, ExamBot bot) {
         try {
-            UserInfo userInfo = userManager.getUserInfo(message.getFrom());
+            User user = message.getFrom();
+            UserInfo userInfo = userManager.getUserInfo(user);
             ExamResult examResult = new ExamResult(userInfo);
-            Localizer localizer = localization.get(message.getFrom().getLanguageCode());
+            Localizer localizer = localization.get(user.getLanguageCode());
+            Exam currentExam = userManager.getCurrentExam(user);
             SendMessage sendMessage = new SendMessage()
                     .setChatId(message.getChatId())
-                    .setReplyMarkup(defaultReplyMarkup(message.getFrom()))
+                    .setReplyMarkup(defaultReplyMarkup(user))
                     .setText(localizer.getMessage("yourTime") + " " +
                             examResult.getSeconds() + " " +
-                            localizer.getMessage("seconds"));
+                            localizer.getMessage("seconds") + ".\n" +
+                            localizer.getMessage("incorrectAnswers") + ": " + examResult.getNumberOfWrongAnswers() + " " +
+                            localizer.getMessage("of") + " " + currentExam.getTasks().size() + " " +
+                            localizer.getMessage("skipped") + ": " + examResult.getNumberOfSkipedAnswers());
             try {
                 bot.callApiMethod(sendMessage);
             } catch (TelegramApiException e) {
