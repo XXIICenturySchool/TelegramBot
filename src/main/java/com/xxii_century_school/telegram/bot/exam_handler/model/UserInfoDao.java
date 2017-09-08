@@ -5,5 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface UserInfoDao extends CrudRepository<UserInfo, Long> {
     UserInfo getByUserId(int userId);
 
-    void deleteAllBy(int userId);
+    void deleteAllByUserId(int userId);
 }

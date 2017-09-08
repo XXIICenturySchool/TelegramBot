@@ -23,9 +23,7 @@ public class StartMessageHandler implements MessageHandler {
         if (message.hasText()) {
             if (message.getText().equalsIgnoreCase("/start")) {
                 String localeCode = message.getFrom().getLanguageCode();
-                String text = locale.get(localeCode).getMessage("welcomeMessage") +
-                        "\n\n" +
-                        locale.get(localeCode).getMessage("askForTeacherId");
+                String text = locale.get(localeCode).getMessage("welcomeMessage");
                 SendMessage newMessage = new SendMessage().setReplyMarkup(examInteractionUtil.defaultReplyMarkup(message.getFrom())) // Create a SendMessage object with mandatory fields
                         .setChatId(message.getChatId())
                         .setParseMode("Markdown")

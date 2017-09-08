@@ -73,7 +73,7 @@ public class ExamIdMessageHandler implements MessageHandler {
                             .setParseMode("Markdown")
                             .setText(localization.get(locale).getMessage("examStart"));
                     bot.callApiMethod(sendMessage);
-                    examInteractionUtil.sendQuestionNumber(message, bot);
+                    examInteractionUtil.sendQuestionNumber(message, bot, false);
                     examInteractionUtil.sendCurrentQuestion(message, bot);
                 }
             } catch (Exception e) {

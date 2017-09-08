@@ -52,7 +52,7 @@ public class AnswerMessageHandler implements MessageHandler {
                 if (examInteractionUtil.endedAnswers(user)) {
                     userManager.nextQuestion(user, true, false);
                 }
-                examInteractionUtil.sendQuestionNumber(message, bot);
+                examInteractionUtil.sendQuestionNumber(message, bot, false);
                 examInteractionUtil.sendCurrentQuestion(message, bot);
                 return true;
             } catch (TelegramApiException | IOException e) {

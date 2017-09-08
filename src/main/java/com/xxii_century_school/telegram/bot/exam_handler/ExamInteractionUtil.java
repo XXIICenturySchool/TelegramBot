@@ -70,34 +70,38 @@ public class ExamInteractionUtil {
     }
 
     private void sendExamResults(Message message, ExamBot bot) {
-        UserInfo userInfo = userManager.getUserInfo(message.getFrom());
-        ExamResult examResult = new ExamResult(userInfo);
-        Localizer localizer = localization.get(message.getFrom().getLanguageCode());
-        SendMessage sendMessage = new SendMessage()
-                .setChatId(message.getChatId())
-                .setText(localizer.getMessage("yourResults") + " " +
-                        userInfo.getWrongAnswers() + " " +
-                        localizer.getMessage("wrong") + " " +
-                        userInfo.getSkippedAnswers() + " " +
-                        localizer.getMessage("skipped"));
         try {
-            bot.callApiMethod(sendMessage);
-        } catch (TelegramApiException e) {
+            UserInfo userInfo = userManager.getUserInfo(message.getFrom());
+            ExamResult examResult = new ExamResult(userInfo);
+            Localizer localizer = localization.get(message.getFrom().getLanguageCode());
+            SendMessage sendMessage = new SendMessage()
+                    .setChatId(message.getChatId())
+                    .setReplyMarkup(defaultReplyMarkup(message.getFrom()))
+                    .setText(localizer.getMessage("yourTime") + " " +
+                            examResult.getSeconds() + " " +
+                            localizer.getMessage("seconds"));
+            try {
+                bot.callApiMethod(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+            String url = Services.GATE.pickRandomInstance(discoveryClient).getUri() + "/exam/sendResult";
+            log.info("sending results to " + url);
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
+            restTemplate.getMessageConverters().add(new StringHttpMessageConverter());
+            restTemplate.postForObject(url, examResult, Void.class);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        String url = Services.GATE.pickRandomInstance(discoveryClient).getUri() + "/sentResult";
-        log.info("sending results to " + url);
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
-        restTemplate.getMessageConverters().add(new StringHttpMessageConverter());
-        restTemplate.postForObject(url, examResult, Void.class);
     }
 
     private void sendExamEndedMessage(Message message, ExamBot bot) throws TelegramApiException {
         String text = localization.get(message.getFrom().getLanguageCode()).getMessage("examEnd");
         SendMessage sendMessage = new SendMessage()
                 .setChatId(message.getChatId())
-                .setText(text);
+                .setText(text)
+                .setReplyMarkup(defaultReplyMarkup(message.getFrom()));
         bot.callApiMethod(sendMessage);
     }
 
@@ -130,9 +134,10 @@ public class ExamInteractionUtil {
         ArrayList<KeyboardRow> keyboard = new ArrayList<>();
         for (int i = 0; i < currentQuestion.getOptions().size(); i++) {
             KeyboardRow keyboardButtons = new KeyboardRow();
-            String text = currentQuestion.getOptions().get(i);
+            String text = "" + i;//currentQuestion.getOptions().get(i);
             if (!currentAnswers.contains(text)) {
-                keyboardButtons.add(new KeyboardButton(text));
+                KeyboardButton button = new KeyboardButton(text);
+                keyboardButtons.add(button);
                 keyboard.add(keyboardButtons);
             }
         }
@@ -144,18 +149,20 @@ public class ExamInteractionUtil {
         return question.getAnswer().contains(answer);
     }
 
-    public void sendQuestionNumber(Message message, ExamBot bot) throws TelegramApiException {
+    public void sendQuestionNumber(Message message, ExamBot bot, boolean reply) throws TelegramApiException {
         if (userManager.isInExam(message.getFrom())) {
             int currentQuestionId = userManager.getCurrentQuestionId(message.getFrom()) + 1;
             int totalQuestions = userManager.getCurrentExam(message.getFrom()).getTasks().size();
             if (currentQuestionId <= totalQuestions) {
                 SendMessage sendMessage = new SendMessage()
                         .setChatId(message.getChatId())
-                        .setReplyToMessageId(message.getMessageId())
                         .setParseMode("Markdown")
                         .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("questionStart") +
                                 currentQuestionId + " / " +
                                 totalQuestions);
+                if (reply) {
+                    sendMessage.setReplyToMessageId(message.getMessageId());
+                }
                 bot.callApiMethod(sendMessage);
             }
         }

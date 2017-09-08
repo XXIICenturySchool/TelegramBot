@@ -131,7 +131,7 @@ public class UserManagerImpl implements UserManager {
     public UserInfo saveUserInfo(UserInfo userInfo) {
         UserInfo oldUserInfo = userInfoDao.getByUserId(userInfo.getUserId());
         if (oldUserInfo != null) {
-            userInfoDao.deleteAllBy(userInfo.getUserId());
+            userInfoDao.deleteAllByUserId(userInfo.getUserId());
         }
         return userInfoDao.save(userInfo);
     }
@@ -165,6 +165,9 @@ public class UserManagerImpl implements UserManager {
         if (info == null) {
             info = new UserInfo();
             info.setUserId(user.getId());
+            info.setFirstName(user.getFirstName());
+            info.setLastName(user.getLastName());
+            info.setUserName(user.getUserName());
             saveUserInfo(info);
         }
         return info;

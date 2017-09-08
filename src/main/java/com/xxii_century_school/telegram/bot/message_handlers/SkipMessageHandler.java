@@ -35,7 +35,7 @@ public class SkipMessageHandler implements MessageHandler {
                     .setText(localization.get(message.getFrom().getLanguageCode()).getMessage("questionSkipped"));
             try {
                 bot.callApiMethod(sendMessage);
-                examInteractionUtil.sendQuestionNumber(message, bot);
+                examInteractionUtil.sendQuestionNumber(message, bot, false);
                 examInteractionUtil.sendCurrentQuestion(message, bot);
                 return true;
             } catch (TelegramApiException | IOException e) {

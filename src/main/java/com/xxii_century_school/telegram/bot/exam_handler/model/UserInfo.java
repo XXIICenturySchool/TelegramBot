@@ -10,6 +10,10 @@ import java.util.Set;
 @Data
 public class UserInfo implements Serializable {
 
+    private String firstName;
+    private String lastName;
+    private String userName;
+
     private int userId;
 
     private Integer currentExamId;
